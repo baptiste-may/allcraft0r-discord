@@ -5,6 +5,7 @@ import {
 import path from "node:path";
 import fs from "node:fs";
 import yaml from "js-yaml";
+import chalk from "chalk";
 
 const __dirname = import.meta.dirname;
 
@@ -35,13 +36,13 @@ async function getCommands(pathname: string): Promise<FileCommandData[]> {
                     cmds.push((await (import(path.join(pathname, file)))).default as FileCommandData);
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 } catch (err) {
-                    console.warn(`⚠️ Command ${path.join(pathname, file)} is not correct.`);
+                    console.warn(chalk.yellow(`⚠️ Command ${path.join(pathname, file)} is not correct.`));
                 }
             }
         }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
-        console.warn(`⚠️ No commands have been found in ${pathname}`);
+        console.warn(chalk.yellow(`⚠️ No commands have been found in ${pathname}`));
         return [];
     }
     return cmds;
@@ -63,7 +64,7 @@ export default async function registerCommands(client: Client): Promise<{
 
     const commandsFolder = path.join(__dirname, "commands");
 
-    console.log(`🔎 Searching for commands...`);
+    console.log(chalk.blue(`🔎 Searching for commands...`));
 
     const privateCommands: FileCommandData[] = await getCommands(path.join(commandsFolder, "private"));
     Object.values(privateCommands).forEach(cmd => {
@@ -101,7 +102,7 @@ export default async function registerCommands(client: Client): Promise<{
             if (color) data.color = color;
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err) {
-            console.warn(`⚠️ Label file for category ${folder} not found.`);
+            console.warn(chalk.yellow(`⚠️ Label file for category ${folder} not found.`));
         }
 
         publicCommands[folder] = data;
@@ -154,14 +155,14 @@ export default async function registerCommands(client: Client): Promise<{
         JSONCommands.push(cmd.data.toJSON());
     }));
 
-    console.log(`✅ ${allCommands.size - 1} commands founded.`)
+    console.log(chalk.green(`✅ ${allCommands.size - 1} commands founded.`));
 
     client.on(Events.InteractionCreate, async interaction => {
         if (!interaction.isChatInputCommand()) return;
 
         const command = allCommands.get(interaction.commandName);
 
-        if (!command) return console.error(`⚠️ No command matching ${interaction.commandName} was found.`);
+        if (!command) return console.error(chalk.red(`⚠️ No command matching ${interaction.commandName} was found.`));
 
         try {
             command.execute(interaction, client);
@@ -186,7 +187,7 @@ export default async function registerCommands(client: Client): Promise<{
      */
     const deployCommands = async (token: string, clientId: string, guildId: string) => {
 
-        console.log(`📦 Deploying ${JSONCommands.length} commands...`)
+        console.log(chalk.blue(`📦 Deploying ${JSONCommands.length} commands...`));
 
         const rest = new REST().setToken(token);
         await rest.put(
@@ -194,7 +195,7 @@ export default async function registerCommands(client: Client): Promise<{
             { body: JSONCommands },
         );
 
-        console.log("✅ Done!")
+        console.log(chalk.green("✅ Done!"));
     };
 
     return {privateCommands, publicCommands, deployCommands};

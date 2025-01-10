@@ -2,6 +2,7 @@ import next from "next";
 import express from "express";
 import DiscordClient, {deployCommands, publicCommands} from "./bot/main";
 import "dotenv/config";
+import chalk from "chalk";
 const TOKEN = process.env.DISCORD_TOKEN;
 if (!TOKEN) throw new Error("DISCORD_TOKEN is required");
 const CLIENT_ID = process.env.DISCORD_ID;
@@ -17,7 +18,7 @@ const handle = app.getRequestHandler();
 // Prepare Front app
 app.prepare().then(async () => {
 
-    console.log("✅ Frontend app ready!");
+    console.log(chalk.green("✅ Frontend app ready!"));
 
     // Creating server
     const server = express();
@@ -43,6 +44,6 @@ app.prepare().then(async () => {
 
     // Start server
     server.listen(port, () => {
-        console.log("✅ Server ready!");
+        console.log(chalk.green("✅ Server ready!"));
     });
 });

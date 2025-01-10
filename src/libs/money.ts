@@ -1,5 +1,6 @@
 import prisma from "@/libs/prisma";
 import {isSameDay} from "date-fns";
+import chalk from "chalk";
 
 export const DEFAULT_MONEY = parseInt(process.env.DEFAULT_MONEY || "250");
 export const DAILY_MONEY = parseInt(process.env.DAILY_MONEY || "100");
@@ -47,6 +48,8 @@ export async function addMoney(id: string, amount: number) {
             money: money + amount,
         }
     });
+
+    console.log(chalk.cyan(`💵 [${amount > 0 ? "+" : "-"}] ${id} : ${money} -> ${money + amount}`));
 }
 
 /**
