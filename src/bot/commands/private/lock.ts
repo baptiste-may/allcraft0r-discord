@@ -1,4 +1,11 @@
-import {ChatInputCommandInteraction, Colors, EmbedBuilder, SlashCommandBuilder, TextChannel} from "discord.js";
+import {
+    ChatInputCommandInteraction,
+    Colors,
+    EmbedBuilder,
+    PermissionFlagsBits,
+    SlashCommandBuilder,
+    TextChannel
+} from "discord.js";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,7 +18,8 @@ module.exports = {
         .addStringOption(option => option
             .setName("reason")
             .setDescription("La raison")
-            .setRequired(false)),
+            .setRequired(false))
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
     async execute(interaction: ChatInputCommandInteraction) {
         const target = interaction.options.getChannel("channel", true) as TextChannel;
         const permissions = target.permissionsFor(target.guild.roles.everyone).toArray();

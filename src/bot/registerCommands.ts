@@ -189,7 +189,7 @@ export default async function registerCommands(client: Client): Promise<{
 
         console.log(chalk.blue(`📦 Deploying ${JSONCommands.length} commands...`));
 
-        const rest = new REST().setToken(token);
+        const rest = new REST({version: "10"}).setToken(token);
         await rest.put(
             Routes.applicationGuildCommands(clientId, guildId),
             { body: JSONCommands },
