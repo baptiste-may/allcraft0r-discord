@@ -20,6 +20,8 @@ export async function getMoney(id: string): Promise<number> {
         }
     });
 
+    console.log(money);
+
     if (money) return money.money;
 
     await prisma.user.create({
@@ -84,6 +86,7 @@ export async function executeDaily(id: string): Promise<boolean> {
     });
 
     if (!lastDaily || !lastDaily.lastDaily || !isSameDay(new Date(lastDaily.lastDaily), new Date())) {
+        await addMoney(id, DAILY_MONEY);
         await prisma.user.update({
             where: {
                 id,
@@ -92,7 +95,6 @@ export async function executeDaily(id: string): Promise<boolean> {
                 lastDaily: new Date(),
             }
         });
-        await addMoney(id, DAILY_MONEY);
         return true;
     }
 
