@@ -1,5 +1,5 @@
 import {
-    ChatInputCommandInteraction, Client, Collection, EmbedBuilder, Events, REST,
+    ChatInputCommandInteraction, Client, ClientEvents, Collection, EmbedBuilder, Events, REST,
     RESTPostAPIChatInputApplicationCommandsJSONBody, Routes, SlashCommandBuilder
 } from "discord.js";
 import path from "node:path";
@@ -12,6 +12,10 @@ const __dirname = import.meta.dirname;
 type FileCommandData = {
     data: SlashCommandBuilder;
     execute: (interaction: ChatInputCommandInteraction, client?: Client) => void;
+    listeners?: {
+        event: keyof ClientEvents;
+        on: (data: never) => Promise<void>;
+    }[];
 }
 
 type CategoryCommands = Record<string, {
@@ -153,6 +157,13 @@ export default async function registerCommands(client: Client): Promise<{
     Object.values(publicCommands).forEach(cat => cat.commands.forEach(cmd => {
         allCommands.set(cmd.data.name, cmd);
         JSONCommands.push(cmd.data.toJSON());
+        if (cmd.listeners !== undefined) {
+            for (const listener of cmd.listeners) {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-expect-error
+                client.on(listener.event, listener.on);
+            }
+        }
     }));
 
     console.log(chalk.green(`✅ ${allCommands.size - 1} commands founded.`));

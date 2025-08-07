@@ -20,8 +20,6 @@ export async function getMoney(id: string): Promise<number> {
         }
     });
 
-    console.log(money);
-
     if (money) return money.money;
 
     await prisma.user.create({
