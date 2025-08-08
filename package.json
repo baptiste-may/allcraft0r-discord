@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^0.1.76",
     "@nextui-org/react": "^2.6.11",
     "@prisma/client": "^6.2.1",
     "@types/date-fns": "^2.6.3",

@@ -38,6 +38,7 @@ export async function getMoney(id: string): Promise<number> {
  * @param amount {number} Amount of money
  */
 export async function addMoney(id: string, amount: number) {
+    if (amount === 0) return;
     const money = await getMoney(id);
 
     await prisma.user.update({

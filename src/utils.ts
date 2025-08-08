@@ -30,3 +30,11 @@ export function strCard(card: PlayingCard) {
 export function strHand(hand: Hand) {
     return (hand.getCards() as PlayingCard[]).map(strCard).join(" | ");
 }
+
+export function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export function randomNumber(max: number) {
+    return Math.floor(Math.random() * (max + 1));
+}
