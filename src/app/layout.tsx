@@ -1,39 +1,33 @@
-import type {Metadata} from "next";
+import type { Metadata } from "next";
 import "./globals.css";
-import {ReactNode} from "react";
-import {NextUIProvider} from "@nextui-org/react";
+import { ReactNode, Suspense } from "react";
 import Header from "@/components/Header";
-import {ThemeProvider} from "next-themes";
-import {AuthProvider} from "@/components/AuthProvider";
 import PageTransitionHandler from "@/components/PageTransition";
+import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
-    title: "Allcraft0r's Discord",
-    description: "Site web pour le discord d'Allcraft0r",
-    icons: "/logo.webp"
+  title: "Allcraft0r's Discord",
+  description: "Site web pour le discord d'Allcraft0r",
+  icons: "/logo.webp",
 };
 
 export default function RootLayout({
-                                       children,
-                                   }: Readonly<{
-    children: ReactNode;
+  children,
+}: Readonly<{
+  children: ReactNode;
 }>) {
-    return (
-        <html lang="fr" className="dark" suppressHydrationWarning>
-        <body>
-        <NextUIProvider>
-            <ThemeProvider attribute="class" defaultTheme="dark">
-                <AuthProvider>
-                    <Header/>
-                    <div className="container mx-auto my-8 px-4 w-screen h-full">
-                        <PageTransitionHandler>
-                            {children}
-                        </PageTransitionHandler>
-                    </div>
-                </AuthProvider>
-            </ThemeProvider>
-        </NextUIProvider>
-        </body>
-        </html>
-    );
+  return (
+    <html lang="fr" className="dark" suppressHydrationWarning>
+      <body className="min-h-screen bg-background font-sans antialiased">
+        <Providers>
+          <Header />
+          <main className="container mx-auto my-8 px-4 w-screen h-full">
+            <Suspense fallback={<div>Chargement...</div>}>
+              <PageTransitionHandler>{children}</PageTransitionHandler>
+            </Suspense>
+          </main>
+        </Providers>
+      </body>
+    </html>
+  );
 }

@@ -1,5 +1,5 @@
 import prisma from "@/libs/prisma";
-import {isSameDay} from "date-fns";
+import { isSameDay } from "date-fns";
 import chalk from "chalk";
 
 export const DEFAULT_MONEY = parseInt(process.env.DEFAULT_MONEY || "250");
@@ -11,25 +11,25 @@ export const DAILY_MONEY = parseInt(process.env.DAILY_MONEY || "100");
  * @return Money of the user
  */
 export async function getMoney(id: string): Promise<number> {
-    const money = await prisma.user.findUnique({
-        where: {
-            id,
-        },
-        select: {
-            money: true,
-        }
-    });
+  const money = await prisma.user.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      money: true,
+    },
+  });
 
-    if (money) return money.money;
+  if (money) return money.money;
 
-    await prisma.user.create({
-        data: {
-            id,
-            money: DEFAULT_MONEY,
-        }
-    });
+  await prisma.user.create({
+    data: {
+      id,
+      money: DEFAULT_MONEY,
+    },
+  });
 
-    return DEFAULT_MONEY;
+  return DEFAULT_MONEY;
 }
 
 /**
@@ -38,35 +38,43 @@ export async function getMoney(id: string): Promise<number> {
  * @param amount {number} Amount of money
  */
 export async function addMoney(id: string, amount: number) {
-    if (amount === 0) return;
-    const money = await getMoney(id);
+  if (amount === 0) return;
+  const money = await getMoney(id);
 
-    await prisma.user.update({
-        where: {
-            id,
-        },
-        data: {
-            money: money + amount,
-        }
-    });
+  await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      money: money + amount,
+    },
+  });
 
-    console.log(chalk.cyan(`💵 [${amount > 0 ? "+" : "-"}] ${id} : ${money} -> ${money + amount}`));
+  console.log(
+    chalk.cyan(
+      `💵 [${amount > 0 ? "+" : "-"}] ${id} : ${money} -> ${money + amount}`,
+    ),
+  );
 }
 
 /**
  * Get money leaderboard
  * @return The leaderboard
  */
-export async function getLeaderboard(): Promise<{ id: string; money: number; }[]> {
-    return await prisma.user.findMany({
-        orderBy: {
-            money: "desc"
-        },
-        select: {
-            id: true,
-            money: true,
-        }
-    });
+export async function getLeaderboard(): Promise<
+  { id: string; money: number }[]
+> {
+  const data = await prisma.user.findMany({
+    orderBy: {
+      money: "desc",
+    },
+    select: {
+      id: true,
+      money: true,
+    },
+  });
+
+  return data;
 }
 
 /**
@@ -75,27 +83,31 @@ export async function getLeaderboard(): Promise<{ id: string; money: number; }[]
  * @return true if the money was given
  */
 export async function executeDaily(id: string): Promise<boolean> {
-    const lastDaily = await prisma.user.findUnique({
-        where: {
-            id,
-        },
-        select: {
-            lastDaily: true,
-        }
+  const lastDaily = await prisma.user.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      lastDaily: true,
+    },
+  });
+
+  if (
+    !lastDaily ||
+    !lastDaily.lastDaily ||
+    !isSameDay(new Date(lastDaily.lastDaily), new Date())
+  ) {
+    await addMoney(id, DAILY_MONEY);
+    await prisma.user.update({
+      where: {
+        id,
+      },
+      data: {
+        lastDaily: new Date(),
+      },
     });
+    return true;
+  }
 
-    if (!lastDaily || !lastDaily.lastDaily || !isSameDay(new Date(lastDaily.lastDaily), new Date())) {
-        await addMoney(id, DAILY_MONEY);
-        await prisma.user.update({
-            where: {
-                id,
-            },
-            data: {
-                lastDaily: new Date(),
-            }
-        });
-        return true;
-    }
-
-    return false;
+  return false;
 }

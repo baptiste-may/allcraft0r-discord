@@ -1,11 +1,16 @@
-import {PrismaClient} from "@prisma/client";
+import "dotenv/config";
+import { PrismaClient } from "@prisma/client";
 
-const prismaClientSingleton = () => {
-    return new PrismaClient();
+if (!process.env.DATABASE_URL) {
+  console.warn("[Prisma Lib] WARNING: DATABASE_URL is not set in process.env!");
 }
 
+const prismaClientSingleton = () => {
+  return new PrismaClient();
+};
+
 declare const globalThis: {
-    prismaGlobal: ReturnType<typeof prismaClientSingleton>;
+  prismaGlobal: ReturnType<typeof prismaClientSingleton>;
 } & typeof global;
 
 const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();

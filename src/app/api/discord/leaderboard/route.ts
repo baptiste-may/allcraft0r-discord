@@ -1,40 +1,95 @@
-import {NextResponse} from "next/server";
-import {getLeaderboard} from "@/libs/money";
+import { NextResponse } from "next/server";
+import { getLeaderboard } from "@/libs/money";
+
 const TOKEN = process.env.DISCORD_TOKEN;
-if (!TOKEN) throw new Error("Token is required");
 
 export async function GET(): Promise<NextResponse> {
+  if (!TOKEN) {
+    return NextResponse.json({ error: "Token is required" }, { status: 500 });
+  }
+
+  try {
+    const leaderboard = await getLeaderboard();
 
     const stream = new ReadableStream({
-        async start(controller) {
-            const leaderboard = (await getLeaderboard()).map(user => Object.assign(user, {user: {}}));
-            let progress = 1/3;
-            const progressStep = (2/3) / leaderboard.length;
-            const updateProgress = () => controller.enqueue(`data: ${JSON.stringify({ progress })}\n\n`);
-            updateProgress();
+      async start(controller) {
+        // Initial progress
+        controller.enqueue(`data: ${JSON.stringify({ progress: 0 })}\n\n`);
 
-            for (const elt of leaderboard) {
-                const res = await fetch(`https://discord.com/api/v10/users/${elt.id}`, {
-                    headers: {
-                        Authorization: "Bot " + TOKEN,
-                    }
-                });
-                elt.user = await res.json();
-                progress += progressStep;
-                updateProgress();
+        if (leaderboard.length === 0) {
+          controller.enqueue(
+            `data: ${JSON.stringify({ complete: true, res: [] })}\n\n`,
+          );
+          controller.close();
+          return;
+        }
+
+        const results = [];
+        const BATCH_SIZE = 5;
+
+        for (let i = 0; i < leaderboard.length; i += BATCH_SIZE) {
+          const batch = leaderboard.slice(i, i + BATCH_SIZE);
+          const batchPromises = batch.map(async (elt) => {
+            try {
+              const res = await fetch(
+                `https://discord.com/api/v10/users/${elt.id}`,
+                {
+                  headers: { Authorization: "Bot " + TOKEN },
+                  next: { revalidate: 3600 },
+                },
+              );
+
+              if (!res.ok) {
+                return {
+                  ...elt,
+                  user: {
+                    global_name: "Inconnu",
+                    username: "inconnu",
+                    avatar: null,
+                  },
+                };
+              }
+
+              const userData = await res.json();
+              return { ...elt, user: userData };
+            } catch (error) {
+              return {
+                ...elt,
+                user: {
+                  global_name: "Inconnu",
+                  username: "inconnu",
+                  avatar: null,
+                },
+              };
             }
+          });
 
-            controller.enqueue(`data: ${JSON.stringify({ complete: true, res: leaderboard })}\n\n`);
+          const batchResults = await Promise.all(batchPromises);
+          results.push(...batchResults);
 
-            controller.close();
-        },
+          const progress = Math.min(0.9, (i + BATCH_SIZE) / leaderboard.length);
+          controller.enqueue(`data: ${JSON.stringify({ progress })}\n\n`);
+        }
+
+        controller.enqueue(
+          `data: ${JSON.stringify({ complete: true, res: results })}\n\n`,
+        );
+        controller.close();
+      },
     });
 
     return new NextResponse(stream, {
-        headers: {
-            "Content-Type": "text/event-stream",
-            "Cache-Control": "no-cache",
-            Connection: "keep-alive",
-        },
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
     });
+  } catch (error) {
+    console.error("[Leaderboard API] Fatal error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
 }

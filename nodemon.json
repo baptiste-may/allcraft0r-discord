@@ -1,5 +1,6 @@
 {
-  "execMap": {
-    "ts": "tsx"
-  }
+  "exec": "bun src/server.ts",
+  "watch": ["src", "prisma", ".env", "next.config.ts"],
+  "ext": "ts,tsx,yml,yaml,json,env",
+  "ignore": ["src/app", "src/components", ".next", "node_modules"]
 }

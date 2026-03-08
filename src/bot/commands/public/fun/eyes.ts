@@ -1,10 +1,10 @@
-import {ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("eyes")
-        .setDescription("I'm watching you..."),
-    async execute(interaction: ChatInputCommandInteraction) {
-        await interaction.reply("👁👄👁");
-    }
+export default {
+  data: new SlashCommandBuilder()
+    .setName("eyes")
+    .setDescription("I'm watching you..."),
+  async execute(interaction: ChatInputCommandInteraction) {
+    await interaction.reply("👁👄👁");
+  },
 };

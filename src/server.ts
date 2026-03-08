@@ -1,6 +1,7 @@
 import next from "next";
 import express from "express";
-import DiscordClient, {deployCommands, publicCommands} from "./bot/main";
+import DiscordClient, { deployCommands, publicCommands } from "./bot/main";
+import { getLeaderboard } from "./libs/money";
 import "dotenv/config";
 import chalk from "chalk";
 const TOKEN = process.env.DISCORD_TOKEN;
@@ -12,38 +13,40 @@ if (!GUILD_ID) throw new Error("DISCORD_GUILD_ID is required");
 
 const port = parseInt(process.env.PORT || "3000", 10);
 const dev = process.env.NODE_ENV !== "production";
-const app = next({dev});
+const app = next({ dev });
 const handle = app.getRequestHandler();
 
 // Prepare Front app
 app.prepare().then(async () => {
+  console.log(chalk.green("✅ Frontend app ready!"));
 
-    console.log(chalk.green("✅ Frontend app ready!"));
+  // Creating server
+  const server = express();
 
-    // Creating server
-    const server = express();
+  server.use(express.json());
 
-    server.use(express.json());
+  // Creating discord bot
+  const discordClient = DiscordClient;
+  // Deploying slash commands
+  await deployCommands(TOKEN, CLIENT_ID, GUILD_ID);
 
-    // Creating discord bot
-    const discordClient = DiscordClient;
-    // Deploying slash commands
-    await deployCommands(TOKEN, CLIENT_ID, GUILD_ID);
+  server.get("/api/getCommands", (_, res) => {
+    return res.json(publicCommands);
+  });
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    server.get("/api/getCommands", (_, res) => {
-        return res.json(publicCommands);
-    });
+  server.get("/api/debug/leaderboard", async (_, res) => {
+    const data = await getLeaderboard();
+    return res.json(data);
+  });
 
-    // Log to discord
-    await discordClient.login(TOKEN);
+  // Log to discord
+  await discordClient.login(TOKEN);
 
-    // Add Next route to server
-    server.get("*", (req, res) => handle(req, res));
+  // Add Next route to server
+  server.all(/^(.*)$/, (req, res) => handle(req, res));
 
-    // Start server
-    server.listen(port, () => {
-        console.log(chalk.green("✅ Server ready!"));
-    });
+  // Start server
+  server.listen(port, () => {
+    console.log(chalk.green("✅ Server ready!"));
+  });
 });
