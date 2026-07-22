@@ -1,0 +1,20 @@
+#!/bin/sh
+# Native Git pre-commit hook script
+
+echo "🔍 Running pre-commit checks..."
+
+# 1. Check code formatting with Spotless
+./gradlew spotlessCheck
+if [ $? -ne 0 ]; then
+    echo "❌ Spotless check failed. Run './gradlew spotlessApply' to format code."
+    exit 1
+fi
+
+# 2. Run unit tests
+./gradlew test
+if [ $? -ne 0 ]; then
+    echo "❌ Unit tests failed. Fix failing tests before committing."
+    exit 1
+fi
+
+echo "✅ All pre-commit checks passed!"

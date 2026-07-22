@@ -1,0 +1,39 @@
+name: CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_lint:
+    name: 🏗️ Build & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java & Gradle
+        uses: ./.github/actions/setup-project
+
+      - name: 🔨 Compile Java Code
+        run: ./gradlew classes testClasses integrationTestClasses
+
+      - name: 🧹 Spotless Formatting Check
+        run: ./gradlew spotlessCheck
+
+  test:
+    name: 🧪 Automated Tests
+    needs: build_and_lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java & Gradle
+        uses: ./.github/actions/setup-project
+
+      - name: 🧪 Run Unit & Integration Tests
+        run: ./gradlew test integrationTest

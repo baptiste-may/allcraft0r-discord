@@ -1,0 +1,122 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.1.0'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.diffplug.spotless' version '7.0.4'
+}
+
+group = 'fr.may_baptiste'
+version = '1.4.0'
+description = 'allcraft0r_discord'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+// ── Source sets ──────────────────────────────────────────────────────────────
+
+sourceSets {
+    integrationTest {
+        java.srcDirs = ['src/integrationTest/java']
+        resources.srcDirs = ['src/integrationTest/resources', 'src/test/resources']
+        compileClasspath += sourceSets.main.output + sourceSets.test.output
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+    integrationTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+    integrationTestCompileOnly.extendsFrom testCompileOnly
+}
+
+// ── Dependencies ─────────────────────────────────────────────────────────────
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-flyway'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    implementation 'net.dv8tion:JDA:6.4.2'
+    implementation 'org.mapstruct:mapstruct:1.6.3'
+    compileOnly 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'org.postgresql:postgresql'
+    // Lombok must come before MapStruct so generated getters/setters are visible
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    testRuntimeOnly 'com.h2database:h2'
+    testCompileOnly 'org.projectlombok:lombok'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+    testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+}
+
+// ── Tasks ────────────────────────────────────────────────────────────────────
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << '-Xlint:all'
+}
+
+tasks.named('test') {
+    description = 'Runs unit tests.'
+    useJUnitPlatform()
+    jvmArgs = ['-javaagent:' + configurations.testRuntimeClasspath.find { it.name.contains('byte-buddy-agent') }]
+}
+
+tasks.register('integrationTest', Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    shouldRunAfter test
+    useJUnitPlatform()
+}
+
+check.dependsOn integrationTest
+
+// ── Spotless ─────────────────────────────────────────────────────────────────
+
+spotless {
+    java {
+        // Allows disabling formatting locally with // @formatter:off / // @formatter:on
+        toggleOffOn()
+        // Remove unused imports
+        removeUnusedImports()
+        // Google Java Format
+        googleJavaFormat('1.28.0')
+        // Ensure files end with a newline
+        endWithNewline()
+        // Scan all source sets including integrationTest
+        target 'src/*/java/**/*.java'
+    }
+}
+
+// ── Git Hooks ────────────────────────────────────────────────────────────────
+
+tasks.register('installGitHooks', Copy) {
+    description = 'Installs Git hooks from scripts/hooks into .git/hooks.'
+    group = 'build setup'
+    from file('scripts/hooks')
+    into file('.git/hooks')
+    filePermissions {
+        unix('rwxr-xr-x')
+    }
+}
+
+tasks.named('compileJava') {
+    dependsOn 'installGitHooks'
+}
+
