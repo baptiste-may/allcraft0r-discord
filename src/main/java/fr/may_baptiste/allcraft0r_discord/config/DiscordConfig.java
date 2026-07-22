@@ -4,11 +4,16 @@ import fr.may_baptiste.allcraft0r_discord.core.SlashCommand;
 import fr.may_baptiste.allcraft0r_discord.system.exception.AdminChannelIdInvalidException;
 import fr.may_baptiste.allcraft0r_discord.system.exception.GuildIdInvalidException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDA.Status;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -65,7 +70,29 @@ public class DiscordConfig {
             .addEventListeners(commands.toArray())
             .build();
 
-    jda.awaitReady();
+    final var connectionFuture =
+        CompletableFuture.runAsync(
+            () -> {
+              try {
+                jda.awaitStatus(Status.CONNECTED);
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(
+                    "Interrupted while awaiting JDA status CONNECTED", e);
+              }
+            });
+
+    try {
+      connectionFuture.get(30, TimeUnit.SECONDS);
+    } catch (TimeoutException e) {
+      connectionFuture.cancel(true);
+      throw new IllegalStateException("Timed out waiting for JDA to reach status CONNECTED", e);
+    } catch (ExecutionException e) {
+      if (e.getCause() instanceof RuntimeException runtimeException) {
+        throw runtimeException;
+      }
+      throw new IllegalStateException("Failed while awaiting JDA status CONNECTED", e.getCause());
+    }
     log.info("Connected as {} ({})", jda.getSelfUser().getName(), jda.getSelfUser().getId());
 
     guild = jda.getGuildById(guildId);

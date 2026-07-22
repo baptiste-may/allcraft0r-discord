@@ -1,10 +1,11 @@
 package fr.may_baptiste.allcraft0r_discord.system.exception;
 
+import java.io.Serial;
 import lombok.Getter;
 
 @Getter
 public class AdminChannelIdInvalidException extends Exception {
-  private static final long serialVersionUID = 1L;
+  @Serial private static final long serialVersionUID = 1L;
 
   private final long channelId;
 

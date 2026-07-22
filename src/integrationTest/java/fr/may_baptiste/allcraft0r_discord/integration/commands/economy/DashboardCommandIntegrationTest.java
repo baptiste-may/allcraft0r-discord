@@ -74,7 +74,8 @@ class DashboardCommandIntegrationTest extends AbstractIntegration {
 
       dashboardCommand.onCommandExecution(event);
 
-      String description = captureReplyEmbed(event).getDescription();
+      final var description = captureReplyEmbed(event).getDescription();
+      assertThat(description).isNotNull();
       assertThat(description.indexOf("<@rich-user>"))
           .isLessThan(description.indexOf("<@poor-user>"));
     }

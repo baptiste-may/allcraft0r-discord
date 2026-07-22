@@ -63,7 +63,7 @@ class DiscordConfigIntegrationTest extends AbstractIntegration {
 
       JDA mockJda = mock(JDA.class);
       SelfUser mockSelfUser = mock(SelfUser.class);
-      when(mockJda.awaitReady()).thenReturn(mockJda);
+      when(mockJda.awaitStatus(JDA.Status.CONNECTED)).thenReturn(mockJda);
       when(mockJda.getSelfUser()).thenReturn(mockSelfUser);
       when(mockSelfUser.getName()).thenReturn("Bot");
       when(mockSelfUser.getId()).thenReturn("123");
@@ -87,7 +87,7 @@ class DiscordConfigIntegrationTest extends AbstractIntegration {
       SelfUser mockSelfUser = mock(SelfUser.class);
       Guild mockGuild = mock(Guild.class);
 
-      when(mockJda.awaitReady()).thenReturn(mockJda);
+      when(mockJda.awaitStatus(JDA.Status.CONNECTED)).thenReturn(mockJda);
       when(mockJda.getSelfUser()).thenReturn(mockSelfUser);
       when(mockSelfUser.getName()).thenReturn("Bot");
       when(mockSelfUser.getId()).thenReturn("123");
@@ -114,7 +114,7 @@ class DiscordConfigIntegrationTest extends AbstractIntegration {
       TextChannel mockChannel = mock(TextChannel.class);
       CommandListUpdateAction mockUpdateAction = mock(CommandListUpdateAction.class);
 
-      when(mockJda.awaitReady()).thenReturn(mockJda);
+      when(mockJda.awaitStatus(JDA.Status.CONNECTED)).thenReturn(mockJda);
       when(mockJda.getSelfUser()).thenReturn(mockSelfUser);
       when(mockSelfUser.getName()).thenReturn("Bot");
       when(mockSelfUser.getId()).thenReturn("123");
