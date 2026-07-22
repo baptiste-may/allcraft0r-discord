@@ -6,18 +6,9 @@ import static org.mockito.Mockito.*;
 
 import fr.may_baptiste.allcraft0r_discord.commands.admin.UnlockCommand;
 import fr.may_baptiste.allcraft0r_discord.integration.AbstractIntegration;
-import java.util.function.Consumer;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.PermissionOverride;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
-import net.dv8tion.jda.api.requests.restaction.PermissionOverrideAction;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -82,46 +73,11 @@ class UnlockCommandIntegrationTest extends AbstractIntegration {
     }
   }
 
-  private UnlockFixture mockUnlockFixture(boolean canEveryoneSendMessages, String reason) {
-    final var event = buildEvent("unlock", "user-1");
-    final var option = mock(OptionMapping.class);
-    final var channelUnion = mock(GuildChannelUnion.class);
-    final var guild = mock(Guild.class);
-    final var everyoneRole = mock(Role.class);
-    final var textChannel = mock(TextChannel.class);
-    final var permissionOverrideAction = mock(PermissionOverrideAction.class);
-    final var sendAction = mock(MessageCreateAction.class);
-
-    when(option.getAsChannel()).thenReturn(channelUnion);
-    when(channelUnion.asTextChannel()).thenReturn(textChannel);
-    when(event.getOption("channel")).thenReturn(option);
-    when(event.getOption(eq("channel"), any())).thenReturn(channelUnion);
-    when(event.getOption(eq("raison"), isNull(), any())).thenReturn(reason);
-    when(textChannel.getGuild()).thenReturn(guild);
-    when(guild.getPublicRole()).thenReturn(everyoneRole);
-    when(everyoneRole.hasPermission(textChannel, Permission.MESSAGE_SEND))
-        .thenReturn(canEveryoneSendMessages);
-    when(textChannel.upsertPermissionOverride(everyoneRole)).thenReturn(permissionOverrideAction);
-    when(permissionOverrideAction.grant(Permission.MESSAGE_SEND))
-        .thenReturn(permissionOverrideAction);
-    doAnswer(
-            invocation -> {
-              @SuppressWarnings("unchecked")
-              final var success = (Consumer<PermissionOverride>) invocation.getArgument(0);
-              success.accept(mock(PermissionOverride.class));
-              return null;
-            })
-        .when(permissionOverrideAction)
-        .queue(any());
-    when(textChannel.sendMessageEmbeds(any(MessageEmbed.class), any(MessageEmbed[].class)))
-        .thenReturn(sendAction);
-    doNothing().when(sendAction).queue();
-
-    return new UnlockFixture(event, textChannel, permissionOverrideAction);
+  private AdminChannelFixture mockUnlockFixture(boolean canEveryoneSendMessages, String reason) {
+    return mockAdminChannelFixture(
+        "unlock",
+        canEveryoneSendMessages,
+        reason,
+        (action, perm) -> when(action.grant(perm)).thenReturn(action));
   }
-
-  private record UnlockFixture(
-      SlashCommandInteractionEvent event,
-      TextChannel textChannel,
-      PermissionOverrideAction permissionOverrideAction) {}
 }

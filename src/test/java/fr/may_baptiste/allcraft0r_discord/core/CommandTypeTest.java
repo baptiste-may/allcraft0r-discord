@@ -17,7 +17,11 @@ class CommandTypeTest {
       final var types = CommandType.values();
       assertThat(types)
           .containsExactlyInAnyOrder(
-              CommandType.ECONOMY, CommandType.FUN, CommandType.GAME, CommandType.UTILS);
+              CommandType.ADMIN,
+              CommandType.ECONOMY,
+              CommandType.FUN,
+              CommandType.GAME,
+              CommandType.UTILS);
 
       for (final var type : types) {
         assertThat(type.getDescription()).isNotBlank();

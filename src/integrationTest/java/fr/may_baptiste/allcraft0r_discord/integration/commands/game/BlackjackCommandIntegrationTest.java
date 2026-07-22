@@ -34,11 +34,7 @@ class BlackjackCommandIntegrationTest extends AbstractIntegration {
 
   private SlashCommandInteractionEvent createBlackjackEvent() {
     SlashCommandInteractionEvent event = buildEvent("blackjack", "123456789");
-    try {
-      when(event.getUser().getIdLong()).thenReturn(Long.parseLong("123456789"));
-    } catch (NumberFormatException ignored) {
-      when(event.getUser().getIdLong()).thenReturn(123456789L);
-    }
+    when(event.getUser().getIdLong()).thenReturn(Long.parseLong("123456789"));
     when(event.getUser().getEffectiveName()).thenReturn("testUser");
     return event;
   }
@@ -48,11 +44,7 @@ class BlackjackCommandIntegrationTest extends AbstractIntegration {
     when(discordUser.getId()).thenReturn(userId);
     when(discordUser.getName()).thenReturn("testUser");
     when(discordUser.getEffectiveName()).thenReturn("testUser");
-    try {
-      when(discordUser.getIdLong()).thenReturn(Long.parseLong(userId));
-    } catch (NumberFormatException ignored) {
-      when(discordUser.getIdLong()).thenReturn(123456789L);
-    }
+    when(discordUser.getIdLong()).thenReturn(Long.parseLong(userId));
 
     ReplyCallbackAction replyAction = mock(ReplyCallbackAction.class);
     when(replyAction.setEphemeral(anyBoolean())).thenReturn(replyAction);
@@ -68,7 +60,7 @@ class BlackjackCommandIntegrationTest extends AbstractIntegration {
     final var event = mock(ButtonInteractionEvent.class);
     when(event.getComponentId()).thenReturn(componentId);
     when(event.getUser()).thenReturn(discordUser);
-    when(event.getMessageIdLong()).thenReturn((long) 0);
+    when(event.getMessageIdLong()).thenReturn(100L);
     when(event.getJDA()).thenReturn(jda);
     when(event.reply(anyString())).thenReturn(replyAction);
     when(event.editMessageEmbeds(any(MessageEmbed.class))).thenReturn(editAction);
@@ -188,7 +180,7 @@ class BlackjackCommandIntegrationTest extends AbstractIntegration {
       ButtonInteractionEvent buttonEvent = buildButtonEvent("blackjack-nextcard", "123456789");
       game.onButtonInteraction(buttonEvent);
 
-      assertThat(game.getPlayersCards().size()).isGreaterThanOrEqualTo(initialCards);
+      assertThat(game.getPlayersCards().size()).isEqualTo(initialCards + 1);
     }
 
     @Test
@@ -242,15 +234,16 @@ class BlackjackCommandIntegrationTest extends AbstractIntegration {
       BlackjackGame game =
           new BlackjackGame(commandEvent, discordConfig, moneyService, 50, profitsRef::set);
 
-      // Hit first to get 3 cards
-      ButtonInteractionEvent nextCardEvent = buildButtonEvent("blackjack-nextcard", "123456789");
-      game.onButtonInteraction(nextCardEvent);
+      game.getPlayersCards()
+          .addCard(
+              new fr.may_baptiste.allcraft0r_discord.commands.game.cards.Card(
+                  fr.may_baptiste.allcraft0r_discord.commands.game.cards.Suit.SPADE,
+                  fr.may_baptiste.allcraft0r_discord.commands.game.cards.Rank.TWO));
 
-      if (!game.isGameEnded()) {
-        ButtonInteractionEvent doubleEvent = buildButtonEvent("blackjack-double", "123456789");
-        game.onButtonInteraction(doubleEvent);
-        verify(doubleEvent).reply("❌ Tu ne peux plus doubler ta mise !");
-      }
+      ButtonInteractionEvent doubleEvent = buildButtonEvent("blackjack-double", "123456789");
+      game.onButtonInteraction(doubleEvent);
+
+      verify(doubleEvent).reply("❌ Tu ne peux plus doubler ta mise !");
     }
 
     @Test

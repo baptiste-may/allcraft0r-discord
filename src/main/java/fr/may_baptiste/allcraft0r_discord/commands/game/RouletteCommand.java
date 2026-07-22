@@ -4,7 +4,9 @@ import fr.may_baptiste.allcraft0r_discord.commands.game.roulette.RouletteImageRe
 import fr.may_baptiste.allcraft0r_discord.config.DiscordConfig;
 import fr.may_baptiste.allcraft0r_discord.core.CommandType;
 import fr.may_baptiste.allcraft0r_discord.core.SlashGameCommand;
+import fr.may_baptiste.allcraft0r_discord.system.exception.CommandExecutionException;
 import fr.may_baptiste.allcraft0r_discord.system.service.MoneyService;
+import jakarta.annotation.PreDestroy;
 import java.awt.Color;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -12,7 +14,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -20,11 +21,11 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.utils.FileUpload;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 @Getter
-@RequiredArgsConstructor
 public class RouletteCommand extends SlashGameCommand {
 
   public static final String ROULETTE_GIF_URL = "https://i.giphy.com/26uf2YTgF5upXUTm0.webp";
@@ -44,8 +45,24 @@ public class RouletteCommand extends SlashGameCommand {
 
   private final MoneyService moneyService;
   private final DiscordConfig discordConfig;
+  private final ScheduledExecutorService scheduler;
 
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+  @Autowired
+  public RouletteCommand(MoneyService moneyService, DiscordConfig discordConfig) {
+    this(moneyService, discordConfig, Executors.newScheduledThreadPool(4));
+  }
+
+  public RouletteCommand(
+      MoneyService moneyService, DiscordConfig discordConfig, ScheduledExecutorService scheduler) {
+    this.moneyService = moneyService;
+    this.discordConfig = discordConfig;
+    this.scheduler = scheduler;
+  }
+
+  @PreDestroy
+  public void shutdown() {
+    scheduler.shutdown();
+  }
 
   @Override
   public SlashCommandData getCommandData() {
@@ -62,13 +79,14 @@ public class RouletteCommand extends SlashGameCommand {
   }
 
   @Override
-  public void onCommandExecution(SlashCommandInteractionEvent event) {
+  public void onCommandExecution(SlashCommandInteractionEvent event)
+      throws CommandExecutionException {
     canPlay(event, moneyService)
         .ifPresent(
             bet -> {
               final var option = event.getOption("category");
               if (option == null) {
-                return;
+                throw new CommandExecutionException("Option 'category' manquante !");
               }
 
               final var category = option.getAsString();
@@ -134,7 +152,7 @@ public class RouletteCommand extends SlashGameCommand {
   public static long calculateGain(long bet, String category, int resultNb) {
     if (resultNb == 0) {
       if ("green".equalsIgnoreCase(category)) {
-        return bet * 35;
+        return bet * 36;
       }
       return 0;
     }

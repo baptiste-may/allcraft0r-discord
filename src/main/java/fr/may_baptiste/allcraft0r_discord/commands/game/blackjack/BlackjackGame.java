@@ -93,7 +93,7 @@ public final class BlackjackGame extends ListenerAdapter {
     if (!event.getComponentId().startsWith("blackjack-")) {
       return;
     }
-    if (messageId != 0 && event.getMessageIdLong() != messageId) {
+    if (messageId == 0 || event.getMessageIdLong() != messageId) {
       return;
     }
     if (event.getUser().getIdLong() != authorId) {

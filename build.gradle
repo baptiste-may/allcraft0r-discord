@@ -85,6 +85,10 @@ tasks.register('integrationTest', Test) {
     useJUnitPlatform()
 }
 
+tasks.named('jar') {
+    enabled = false
+}
+
 check.dependsOn integrationTest
 
 // ── Spotless ─────────────────────────────────────────────────────────────────

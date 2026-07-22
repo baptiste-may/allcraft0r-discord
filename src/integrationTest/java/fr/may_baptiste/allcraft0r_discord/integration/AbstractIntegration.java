@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
+import net.dv8tion.jda.api.requests.restaction.PermissionOverrideAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.ArgumentCaptor;
@@ -67,9 +68,16 @@ public abstract class AbstractIntegration {
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
+  protected ReplyCallbackAction lastReplyAction;
+
   @BeforeEach
   void cleanDatabase() {
     userRepository.deleteAll();
+  }
+
+  @org.junit.jupiter.api.AfterEach
+  void resetAdminChannel() {
+    ReflectionTestUtils.setField(discordConfig, "adminChannel", null);
   }
 
   // ── Event builder ────────────────────────────────────────────────────────────
@@ -96,6 +104,7 @@ public abstract class AbstractIntegration {
     when(discordUser.getName()).thenReturn("testUser");
 
     ReplyCallbackAction replyAction = mock(ReplyCallbackAction.class);
+    this.lastReplyAction = replyAction;
     when(replyAction.setEphemeral(anyBoolean())).thenReturn(replyAction);
     when(replyAction.addContent(any())).thenReturn(replyAction);
     when(replyAction.addComponents(anyCollection())).thenReturn(replyAction);
@@ -103,6 +112,35 @@ public abstract class AbstractIntegration {
     when(replyAction.setFiles(any(net.dv8tion.jda.api.utils.FileUpload[].class)))
         .thenReturn(replyAction);
     when(replyAction.setFiles(anyCollection())).thenReturn(replyAction);
+
+    net.dv8tion.jda.api.interactions.InteractionHook hook =
+        mock(net.dv8tion.jda.api.interactions.InteractionHook.class);
+    net.dv8tion.jda.api.requests.restaction.WebhookMessageRetrieveAction retrieveAction =
+        mock(net.dv8tion.jda.api.requests.restaction.WebhookMessageRetrieveAction.class);
+    net.dv8tion.jda.api.entities.Message msg = mock(net.dv8tion.jda.api.entities.Message.class);
+    when(msg.getIdLong()).thenReturn(100L);
+    when(hook.retrieveOriginal()).thenReturn(retrieveAction);
+    doAnswer(
+            inv -> {
+              @SuppressWarnings("unchecked")
+              java.util.function.Consumer<net.dv8tion.jda.api.entities.Message> consumer =
+                  inv.getArgument(0);
+              if (consumer != null) consumer.accept(msg);
+              return null;
+            })
+        .when(retrieveAction)
+        .queue(any());
+
+    doAnswer(
+            inv -> {
+              @SuppressWarnings("unchecked")
+              java.util.function.Consumer<net.dv8tion.jda.api.interactions.InteractionHook>
+                  consumer = inv.getArgument(0);
+              if (consumer != null) consumer.accept(hook);
+              return null;
+            })
+        .when(replyAction)
+        .queue(any());
     doNothing().when(replyAction).queue();
 
     final var event = mock(SlashCommandInteractionEvent.class);
@@ -217,5 +255,59 @@ public abstract class AbstractIntegration {
     ArgumentCaptor<String> captor = ArgumentCaptor.captor();
     verify(event).reply(captor.capture());
     return captor.getValue();
+  }
+
+  // ── Admin channel fixture helper ──────────────────────────────────────────────
+
+  protected record AdminChannelFixture(
+      SlashCommandInteractionEvent event,
+      TextChannel textChannel,
+      PermissionOverrideAction permissionOverrideAction) {}
+
+  protected AdminChannelFixture mockAdminChannelFixture(
+      String commandName,
+      boolean canEveryoneSendMessages,
+      String reason,
+      java.util.function.BiConsumer<PermissionOverrideAction, net.dv8tion.jda.api.Permission>
+          permSetup) {
+    final var event = buildEvent(commandName, "user-1");
+    final var option = mock(OptionMapping.class);
+    final var channelUnion =
+        mock(net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion.class);
+    final var guild = mock(net.dv8tion.jda.api.entities.Guild.class);
+    final var everyoneRole = mock(net.dv8tion.jda.api.entities.Role.class);
+    final var textChannel = mock(TextChannel.class);
+    final var permissionOverrideAction = mock(PermissionOverrideAction.class);
+    final var sendAction = mock(MessageCreateAction.class);
+
+    when(option.getAsChannel()).thenReturn(channelUnion);
+    when(channelUnion.asTextChannel()).thenReturn(textChannel);
+    when(event.getOption("channel")).thenReturn(option);
+    when(event.getOption(eq("channel"), any())).thenReturn(channelUnion);
+    when(event.getOption(eq("raison"), isNull(), any())).thenReturn(reason);
+    when(textChannel.getGuild()).thenReturn(guild);
+    when(guild.getPublicRole()).thenReturn(everyoneRole);
+    when(everyoneRole.hasPermission(textChannel, net.dv8tion.jda.api.Permission.MESSAGE_SEND))
+        .thenReturn(canEveryoneSendMessages);
+    when(textChannel.upsertPermissionOverride(everyoneRole)).thenReturn(permissionOverrideAction);
+    if (permSetup != null) {
+      permSetup.accept(permissionOverrideAction, net.dv8tion.jda.api.Permission.MESSAGE_SEND);
+    }
+    doAnswer(
+            invocation -> {
+              @SuppressWarnings("unchecked")
+              final var success =
+                  (java.util.function.Consumer<net.dv8tion.jda.api.entities.PermissionOverride>)
+                      invocation.getArgument(0);
+              success.accept(mock(net.dv8tion.jda.api.entities.PermissionOverride.class));
+              return null;
+            })
+        .when(permissionOverrideAction)
+        .queue(any());
+    when(textChannel.sendMessageEmbeds(any(MessageEmbed.class), any(MessageEmbed[].class)))
+        .thenReturn(sendAction);
+    doNothing().when(sendAction).queue();
+
+    return new AdminChannelFixture(event, textChannel, permissionOverrideAction);
   }
 }

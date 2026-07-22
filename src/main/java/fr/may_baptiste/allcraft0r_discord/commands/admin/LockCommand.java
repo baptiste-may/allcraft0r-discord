@@ -23,7 +23,7 @@ public class LockCommand extends SlashCommand {
 
   private final String name = "lock";
   private final String description = "Permet de lock un channel";
-  private final CommandType type = null;
+  private final CommandType type = CommandType.ADMIN;
 
   @Override
   public SlashCommandData getCommandData() {

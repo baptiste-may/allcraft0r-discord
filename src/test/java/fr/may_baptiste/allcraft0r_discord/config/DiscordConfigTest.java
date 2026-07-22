@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 class DiscordConfigTest {
 
@@ -15,8 +14,7 @@ class DiscordConfigTest {
     @Test
     @DisplayName("should format redstone emoji and number correctly")
     void shouldFormatRedstoneEmojiAndNumber() {
-      final var config = new DiscordConfig();
-      ReflectionTestUtils.setField(config, "redstoneEmojiId", "123456789");
+      final var config = new DiscordConfig("token", 123L, 456L, "123456789");
 
       assertThat(config.getRedstoneEmoji()).isEqualTo("<:redstone:123456789>");
       assertThat(config.formatRedstoneNumber(42L)).isEqualTo("42 <:redstone:123456789>");

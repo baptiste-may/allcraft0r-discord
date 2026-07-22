@@ -22,14 +22,10 @@ public abstract class SlashGameCommand extends SlashCommand {
 
   protected Optional<Long> canPlay(SlashCommandInteractionEvent event, MoneyService moneyService) {
     final long bet = event.getOption("mise", MINIMAL_BET, OptionMapping::getAsLong);
-    final long userMoney = moneyService.getMoney(event.getUser().getId());
-
-    if (bet > userMoney) {
+    if (!moneyService.tryDeductMoney(event.getUser().getId(), bet)) {
       event.reply("❌ Tu n'as pas assez de redstone !").setEphemeral(true).queue();
       return Optional.empty();
     }
-
-    moneyService.addMoney(event.getUser().getId(), -bet);
     return Optional.of(bet);
   }
 }

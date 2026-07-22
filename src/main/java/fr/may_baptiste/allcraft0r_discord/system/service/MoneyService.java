@@ -9,9 +9,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class MoneyService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
@@ -19,6 +21,7 @@ public class MoneyService {
   public static final long DEFAULT_MONEY = 250;
   public static final long DAILY_MONEY = 100;
 
+  @Transactional(readOnly = true)
   public long getMoney(String userId) {
     return getOrCreateUser(userId).getMoney();
   }
@@ -30,7 +33,17 @@ public class MoneyService {
     return user.getMoney();
   }
 
-  public long executeDaily(String userId) throws CannotExecuteDailyException {
+  public synchronized boolean tryDeductMoney(String userId, long amount) {
+    final var user = getOrCreateUser(userId);
+    if (user.getMoney() < amount) {
+      return false;
+    }
+    user.setMoney(user.getMoney() - amount);
+    userRepository.save(user);
+    return true;
+  }
+
+  public synchronized long executeDaily(String userId) throws CannotExecuteDailyException {
     final var user = getOrCreateUser(userId);
     if (user.getLastDaily() == null
         || user.getLastDaily().isBefore(LocalDateTime.now().minusDays(1))) {
@@ -42,6 +55,7 @@ public class MoneyService {
     throw new CannotExecuteDailyException(user.getLastDaily().plusDays(1));
   }
 
+  @Transactional(readOnly = true)
   public List<UserMoneyDTO> getLeaderboard(long maxSize) {
     return userRepository.findAllByOrderByMoneyDesc().stream()
         .limit(maxSize)
@@ -54,7 +68,7 @@ public class MoneyService {
         .findById(userId)
         .orElseGet(
             () -> {
-              UserEntity newUser = new UserEntity();
+              final var newUser = new UserEntity();
               newUser.setId(userId);
               newUser.setMoney(DEFAULT_MONEY);
               return userRepository.save(newUser);

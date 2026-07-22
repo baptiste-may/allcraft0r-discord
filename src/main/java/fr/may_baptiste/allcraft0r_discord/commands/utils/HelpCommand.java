@@ -37,6 +37,7 @@ public class HelpCommand extends SlashCommand {
 
   private Command.Choice[] getTypesAsChoices() {
     return Arrays.stream(CommandType.values())
+        .filter(type -> type != CommandType.ADMIN)
         .map(type -> new Command.Choice(type.getDescription(), type.name()))
         .toArray(Command.Choice[]::new);
   }
@@ -55,6 +56,9 @@ public class HelpCommand extends SlashCommand {
   }
 
   private MessageEmbed.Field[] getCommandsAsFields(CommandType commandType) {
+    if (commandType == CommandType.ADMIN) {
+      return new MessageEmbed.Field[0];
+    }
     return commands.stream()
         .filter(cmd -> commandType.equals(cmd.getType()))
         .map(

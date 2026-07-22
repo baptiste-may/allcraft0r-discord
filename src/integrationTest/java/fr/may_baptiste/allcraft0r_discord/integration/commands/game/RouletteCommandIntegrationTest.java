@@ -1,11 +1,14 @@
 package fr.may_baptiste.allcraft0r_discord.integration.commands.game;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import fr.may_baptiste.allcraft0r_discord.commands.game.RouletteCommand;
 import fr.may_baptiste.allcraft0r_discord.integration.AbstractIntegration;
 import fr.may_baptiste.allcraft0r_discord.system.entity.UserEntity;
 import fr.may_baptiste.allcraft0r_discord.system.service.MoneyService;
+import java.util.concurrent.ScheduledExecutorService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,8 +16,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 class RouletteCommandIntegrationTest extends AbstractIntegration {
 
-  @Autowired RouletteCommand rouletteCommand;
+  RouletteCommand rouletteCommand;
   @Autowired MoneyService moneyService;
+
+  @BeforeEach
+  void setUpRoulette() {
+    ScheduledExecutorService mockScheduler = mock(ScheduledExecutorService.class);
+    rouletteCommand = new RouletteCommand(moneyService, discordConfig, mockScheduler);
+  }
 
   @Nested
   class InsufficientFunds {

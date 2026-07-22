@@ -75,4 +75,31 @@ class HelpCommandIntegrationTest extends AbstractIntegration {
       assertThat(commandNames).noneMatch(name -> name.contains("/unlock"));
     }
   }
+
+  @Nested
+  class AdminType {
+
+    @Test
+    @DisplayName("should not include admin type in command options choices")
+    void shouldNotIncludeAdminTypeInCommandOptionsChoices() {
+      final var choices = helpCommand.getCommandData().getOptions().get(0).getChoices();
+      final var choiceNames =
+          choices.stream()
+              .map(net.dv8tion.jda.api.interactions.commands.Command.Choice::getName)
+              .toList();
+
+      assertThat(choiceNames).doesNotContain(CommandType.ADMIN.getDescription());
+    }
+
+    @Test
+    @DisplayName("should return empty fields when admin type is passed")
+    void shouldReturnEmptyFieldsWhenAdminTypeIsPassed() {
+      final var event = buildEvent("help", "user-1");
+      stubStringOption(event, "type", CommandType.ADMIN.name());
+
+      helpCommand.onCommandExecution(event);
+
+      assertThat(captureReplyEmbed(event).getFields()).isEmpty();
+    }
+  }
 }

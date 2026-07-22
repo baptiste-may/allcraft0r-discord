@@ -23,7 +23,7 @@ public class UnlockCommand extends SlashCommand {
 
   private final String name = "unlock";
   private final String description = "Permet de unlock un channel";
-  private final CommandType type = null;
+  private final CommandType type = CommandType.ADMIN;
 
   @Override
   public SlashCommandData getCommandData() {

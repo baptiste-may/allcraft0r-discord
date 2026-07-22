@@ -8,7 +8,7 @@ COPY gradlew build.gradle settings.gradle ./
 RUN chmod +x ./gradlew
 
 # Pre-fetch Gradle dependencies
-RUN ./gradlew dependencies --no-daemon || true
+RUN ./gradlew dependencies --no-daemon
 
 # Copy source code and build bootable JAR
 COPY src/ src/

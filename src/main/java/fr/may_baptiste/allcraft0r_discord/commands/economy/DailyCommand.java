@@ -6,7 +6,7 @@ import fr.may_baptiste.allcraft0r_discord.core.SlashCommand;
 import fr.may_baptiste.allcraft0r_discord.system.exception.commands.CannotExecuteDailyException;
 import fr.may_baptiste.allcraft0r_discord.system.service.MoneyService;
 import java.awt.Color;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +48,10 @@ public class DailyCommand extends SlashCommand {
                       .setTitle(
                           "Tu as déjà récupéré ta redstone quotidienne.\nTu pourra executer cette commande à nouveau **<t:%d:R>**"
                               .formatted(
-                                  exception.getNextAvailableDaily().toEpochSecond(ZoneOffset.UTC)))
+                                  exception
+                                      .getNextAvailableDaily()
+                                      .atZone(ZoneId.systemDefault())
+                                      .toEpochSecond()))
                       .setColor(Color.RED)
                       .build()))
           .setEphemeral(true)

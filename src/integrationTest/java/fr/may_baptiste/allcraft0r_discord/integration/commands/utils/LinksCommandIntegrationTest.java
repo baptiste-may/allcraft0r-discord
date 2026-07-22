@@ -33,8 +33,20 @@ class LinksCommandIntegrationTest extends AbstractIntegration {
 
       linksCommand.onCommandExecution(event);
 
-      assertThat(linksCommand.getYtBase().getUrl()).contains("youtube.com");
-      assertThat(linksCommand.getYtBestOf().getUrl()).contains("youtube.com");
+      @SuppressWarnings("unchecked")
+      final var captor =
+          org.mockito.ArgumentCaptor.forClass(
+              (Class<java.util.Collection<net.dv8tion.jda.api.components.actionrow.ActionRow>>)
+                  (Class<?>) java.util.Collection.class);
+      org.mockito.Mockito.verify(lastReplyAction).addComponents(captor.capture());
+
+      final var buttons =
+          captor.getValue().stream().flatMap(row -> row.getButtons().stream()).toList();
+
+      assertThat(buttons)
+          .extracting(net.dv8tion.jda.api.components.buttons.Button::getUrl)
+          .filteredOn(url -> url != null && url.contains("youtube.com"))
+          .hasSize(2);
     }
   }
 }

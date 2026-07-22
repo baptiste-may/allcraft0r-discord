@@ -67,16 +67,26 @@ public class MoneyServiceTest {
     @DisplayName("should return correct additionned money when user entity do not exists yet")
     void shouldReturnCorrectAdditionedMoneyWhenUserEntityDoNotExistsYet() {
       when(userRepository.findById("userId")).thenReturn(Optional.empty());
-      final var defaultUserEntity = buildUserEntity("userId");
-      when(userRepository.save(defaultUserEntity)).thenReturn(defaultUserEntity);
-      final var exceptedUserEntity = buildUserEntity("userId");
-      exceptedUserEntity.setMoney(defaultUserEntity.getMoney() + ADDED_MONEY);
-      when(userRepository.save(exceptedUserEntity)).thenReturn(exceptedUserEntity);
+      final List<UserEntity> savedUsers = new ArrayList<>();
+      doAnswer(
+              invocation -> {
+                UserEntity user = invocation.getArgument(0);
+                UserEntity copy = new UserEntity();
+                copy.setId(user.getId());
+                copy.setMoney(user.getMoney());
+                copy.setLastDaily(user.getLastDaily());
+                savedUsers.add(copy);
+                return user;
+              })
+          .when(userRepository)
+          .save(any(UserEntity.class));
 
       assertThat(moneyService.addMoney("userId", ADDED_MONEY))
           .isEqualTo(MoneyService.DEFAULT_MONEY + ADDED_MONEY);
-      verify(userRepository).save(defaultUserEntity);
-      verify(userRepository).save(exceptedUserEntity);
+
+      assertThat(savedUsers).hasSize(2);
+      assertThat(savedUsers.getFirst().getMoney()).isEqualTo(MoneyService.DEFAULT_MONEY);
+      assertThat(savedUsers.get(1).getMoney()).isEqualTo(MoneyService.DEFAULT_MONEY + ADDED_MONEY);
     }
 
     @Test

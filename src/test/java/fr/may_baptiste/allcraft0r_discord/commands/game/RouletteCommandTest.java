@@ -15,9 +15,9 @@ class RouletteCommandTest {
   class PayoutCalculations {
 
     @Test
-    @DisplayName("should payout 35x bet on green when zero hits")
-    void shouldPayout35xOnGreenZero() {
-      assertThat(RouletteCommand.calculateGain(50, "green", 0)).isEqualTo(50 * 35);
+    @DisplayName("should payout 36x bet on green when zero hits")
+    void shouldPayout36xOnGreenZero() {
+      assertThat(RouletteCommand.calculateGain(50, "green", 0)).isEqualTo(50 * 36);
     }
 
     @Test

@@ -22,7 +22,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.util.ReflectionTestUtils;
 
 class DiscordConfigIntegrationTest extends AbstractIntegration {
 
@@ -33,14 +32,14 @@ class DiscordConfigIntegrationTest extends AbstractIntegration {
   class RedstoneFormatting {
 
     @Test
-    @DisplayName("Should return formatted redstone emoji string")
-    void shouldReturnFormattedRedstoneEmoji() {
+    @DisplayName("Should format number with redstone emoji")
+    void shouldFormatRedstoneNumber() {
       assertThat(discordConfig.formatRedstoneNumber(100)).contains("100").contains("<:redstone:");
     }
 
     @Test
-    @DisplayName("Should format number with redstone emoji")
-    void shouldFormatRedstoneNumber() {
+    @DisplayName("Should return formatted redstone emoji string")
+    void shouldReturnFormattedRedstoneEmoji() {
       assertThat(discordConfig.getRedstoneEmoji()).startsWith("<:redstone:").endsWith(">");
     }
   }
@@ -60,9 +59,7 @@ class DiscordConfigIntegrationTest extends AbstractIntegration {
     @Test
     @DisplayName("Should throw GuildIdInvalidException when guild is not found")
     void shouldThrowGuildIdInvalidExceptionWhenGuildNotFound() throws Exception {
-      DiscordConfig testConfig = new DiscordConfig();
-      ReflectionTestUtils.setField(testConfig, "botToken", "dummy-token");
-      ReflectionTestUtils.setField(testConfig, "guildId", 123L);
+      DiscordConfig testConfig = new DiscordConfig("dummy-token", 123L, 456L, "redstone-emoji");
 
       JDA mockJda = mock(JDA.class);
       SelfUser mockSelfUser = mock(SelfUser.class);
@@ -84,10 +81,7 @@ class DiscordConfigIntegrationTest extends AbstractIntegration {
     @Test
     @DisplayName("Should throw AdminChannelIdInvalidException when admin channel is not found")
     void shouldThrowAdminChannelIdInvalidExceptionWhenAdminChannelNotFound() throws Exception {
-      DiscordConfig testConfig = new DiscordConfig();
-      ReflectionTestUtils.setField(testConfig, "botToken", "dummy-token");
-      ReflectionTestUtils.setField(testConfig, "guildId", 123L);
-      ReflectionTestUtils.setField(testConfig, "adminChannelId", 456L);
+      DiscordConfig testConfig = new DiscordConfig("dummy-token", 123L, 456L, "redstone-emoji");
 
       JDA mockJda = mock(JDA.class);
       SelfUser mockSelfUser = mock(SelfUser.class);
@@ -112,10 +106,7 @@ class DiscordConfigIntegrationTest extends AbstractIntegration {
     @Test
     @DisplayName("Should initialize JDA, fetch guild and channel, and update commands successfully")
     void shouldInitializeJdaSuccessfully() throws Exception {
-      DiscordConfig testConfig = new DiscordConfig();
-      ReflectionTestUtils.setField(testConfig, "botToken", "dummy-token");
-      ReflectionTestUtils.setField(testConfig, "guildId", 123L);
-      ReflectionTestUtils.setField(testConfig, "adminChannelId", 456L);
+      DiscordConfig testConfig = new DiscordConfig("dummy-token", 123L, 456L, "redstone-emoji");
 
       JDA mockJda = mock(JDA.class);
       SelfUser mockSelfUser = mock(SelfUser.class);
@@ -135,7 +126,7 @@ class DiscordConfigIntegrationTest extends AbstractIntegration {
       when(mockChannel.getId()).thenReturn("789");
       when(mockGuild.updateCommands()).thenReturn(mockUpdateAction);
       when(mockUpdateAction.addCommands(anyList())).thenReturn(mockUpdateAction);
-      doNothing().when(mockUpdateAction).queue();
+      doNothing().when(mockUpdateAction).queue(any(), any());
 
       try (var mockedJdaBuilder = mockStatic(JDABuilder.class)) {
         JDABuilder builderMock = createMockBuilder(mockJda);
@@ -146,7 +137,7 @@ class DiscordConfigIntegrationTest extends AbstractIntegration {
         assertThat(result).isEqualTo(mockJda);
         assertThat(testConfig.getGuild()).isEqualTo(mockGuild);
         assertThat(testConfig.getAdminChannel()).isEqualTo(mockChannel);
-        verify(mockUpdateAction).queue();
+        verify(mockUpdateAction).queue(any(), any());
       }
     }
   }
