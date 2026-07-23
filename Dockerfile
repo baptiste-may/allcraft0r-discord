@@ -18,6 +18,9 @@ RUN ./gradlew bootJar --no-daemon -x test
 FROM eclipse-temurin:25-jdk AS runner
 WORKDIR /app
 
+# Install curl for container health checks
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
 # Run as non-root user for security
 RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
