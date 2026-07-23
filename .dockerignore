@@ -1,0 +1,13 @@
+.git
+.gitignore
+.github
+.gradle
+.idea
+.qodana
+build
+*.iml
+*.log
+README.md
+Dockerfile
+.dockerignore
+.env*
