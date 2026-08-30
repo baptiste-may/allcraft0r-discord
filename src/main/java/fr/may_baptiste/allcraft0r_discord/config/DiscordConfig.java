@@ -4,6 +4,7 @@ import fr.may_baptiste.allcraft0r_discord.core.SlashCommand;
 import fr.may_baptiste.allcraft0r_discord.system.exception.AdminChannelIdInvalidException;
 import fr.may_baptiste.allcraft0r_discord.system.exception.GuildIdInvalidException;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +58,7 @@ public class DiscordConfig {
   }
 
   public String formatRedstoneNumber(long nb) {
-    return "%d %s".formatted(nb, getRedstoneEmoji());
+    return String.format(Locale.FRANCE, "%,d %s", nb, getRedstoneEmoji());
   }
 
   @Bean

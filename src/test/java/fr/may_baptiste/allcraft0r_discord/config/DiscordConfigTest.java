@@ -12,12 +12,14 @@ class DiscordConfigTest {
   class FormattingHelpers {
 
     @Test
-    @DisplayName("should format redstone emoji and number correctly")
+    @DisplayName("should format redstone emoji and number correctly with French locale format")
     void shouldFormatRedstoneEmojiAndNumber() {
       final var config = new DiscordConfig("token", 123L, 456L, "123456789");
 
       assertThat(config.getRedstoneEmoji()).isEqualTo("<:redstone:123456789>");
       assertThat(config.formatRedstoneNumber(42L)).isEqualTo("42 <:redstone:123456789>");
+      assertThat(config.formatRedstoneNumber(50135L))
+          .isEqualTo("50\u202F135 <:redstone:123456789>");
     }
   }
 }

@@ -26,7 +26,7 @@ class MoneyCommandIntegrationTest extends AbstractIntegration {
       moneyCommand.onCommandExecution(event);
 
       assertThat(captureReplyEmbedSingle(event).getTitle())
-          .contains(String.valueOf(MoneyService.DEFAULT_MONEY));
+          .contains(discordConfig.formatRedstoneNumber(MoneyService.DEFAULT_MONEY));
     }
   }
 
@@ -45,7 +45,8 @@ class MoneyCommandIntegrationTest extends AbstractIntegration {
 
       moneyCommand.onCommandExecution(event);
 
-      assertThat(captureReplyEmbedSingle(event).getTitle()).contains("9999");
+      assertThat(captureReplyEmbedSingle(event).getTitle())
+          .contains(discordConfig.formatRedstoneNumber(9999));
     }
   }
 }
