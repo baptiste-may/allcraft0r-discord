@@ -70,7 +70,8 @@ public final class BlackjackGame extends ListenerAdapter {
           .setFiles(createFileUpload())
           .setComponents(List.of(createButtons(true, true, true)))
           .queue(
-              _ -> {
+              hook -> {
+                hook.retrieveOriginal().queue(msg -> this.messageId = msg.getIdLong());
                 scheduler.shutdown();
                 callback.accept(calculatePlayerGain());
               });

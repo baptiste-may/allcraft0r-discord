@@ -37,3 +37,6 @@ out/
 
 ### Local secrets (never commit these) ###
 application-local.properties
+.env
+.env*.local
+!.env.example
