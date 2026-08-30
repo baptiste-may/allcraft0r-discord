@@ -8,7 +8,8 @@ import fr.may_baptiste.allcraft0r_discord.commands.economy.DailyCommand;
 import fr.may_baptiste.allcraft0r_discord.integration.AbstractIntegration;
 import fr.may_baptiste.allcraft0r_discord.system.entity.UserEntity;
 import fr.may_baptiste.allcraft0r_discord.system.service.MoneyService;
-import java.awt.*;
+import java.awt.Color;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -64,7 +65,7 @@ class DailyCommandIntegrationTest extends AbstractIntegration {
       UserEntity user = new UserEntity();
       user.setId(USER_ID);
       user.setMoney(MoneyService.DEFAULT_MONEY + MoneyService.DAILY_MONEY);
-      user.setLastDaily(LocalDateTime.now());
+      user.setLastDaily(LocalDateTime.now(MoneyService.TIME_ZONE));
       userRepository.save(user);
     }
 
@@ -108,7 +109,7 @@ class DailyCommandIntegrationTest extends AbstractIntegration {
       UserEntity user = new UserEntity();
       user.setId(USER_ID);
       user.setMoney(MoneyService.DEFAULT_MONEY);
-      user.setLastDaily(LocalDateTime.now().minusDays(1).minusSeconds(1));
+      user.setLastDaily(LocalDate.now(MoneyService.TIME_ZONE).minusDays(1).atTime(23, 59, 59));
       userRepository.save(user);
     }
 

@@ -6,7 +6,6 @@ import fr.may_baptiste.allcraft0r_discord.core.SlashCommand;
 import fr.may_baptiste.allcraft0r_discord.system.exception.commands.CannotExecuteDailyException;
 import fr.may_baptiste.allcraft0r_discord.system.service.MoneyService;
 import java.awt.Color;
-import java.time.ZoneId;
 import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +49,7 @@ public class DailyCommand extends SlashCommand {
                               .formatted(
                                   exception
                                       .getNextAvailableDaily()
-                                      .atZone(ZoneId.systemDefault())
+                                      .atZone(MoneyService.TIME_ZONE)
                                       .toEpochSecond()))
                       .setColor(Color.RED)
                       .build()))

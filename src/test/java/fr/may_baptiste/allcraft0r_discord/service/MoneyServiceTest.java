@@ -12,6 +12,7 @@ import fr.may_baptiste.allcraft0r_discord.system.exception.commands.CannotExecut
 import fr.may_baptiste.allcraft0r_discord.system.mapper.UserMapper;
 import fr.may_baptiste.allcraft0r_discord.system.repository.UserRepository;
 import fr.may_baptiste.allcraft0r_discord.system.service.MoneyService;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -158,7 +159,7 @@ public class MoneyServiceTest {
     void shouldExecuteDailyAndUpdateUserWhenUserEntityExistsAndCanDaily()
         throws CannotExecuteDailyException {
       final var userEntity = buildUserEntity("userId");
-      LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
+      LocalDateTime yesterday = LocalDate.now(MoneyService.TIME_ZONE).minusDays(1).atStartOfDay();
       userEntity.setLastDaily(yesterday);
 
       final List<UserEntity> savedUsers = new ArrayList<>();
@@ -190,17 +191,50 @@ public class MoneyServiceTest {
     }
 
     @Test
+    @DisplayName("should execute daily when user claimed yesterday even if less than 24 hours ago")
+    void shouldExecuteDailyWhenUserClaimedYesterdayEvenIfLessThan24HoursAgo()
+        throws CannotExecuteDailyException {
+      final var userEntity = buildUserEntity("userId");
+      LocalDateTime yesterdayLate =
+          LocalDate.now(MoneyService.TIME_ZONE).minusDays(1).atTime(23, 59, 59);
+      userEntity.setLastDaily(yesterdayLate);
+
+      final List<UserEntity> savedUsers = new ArrayList<>();
+      when(userRepository.findById("userId")).thenReturn(Optional.of(userEntity));
+
+      doAnswer(
+              invocation -> {
+                UserEntity user = invocation.getArgument(0);
+                UserEntity copy = new UserEntity();
+                copy.setId(user.getId());
+                copy.setMoney(user.getMoney());
+                copy.setLastDaily(user.getLastDaily());
+                savedUsers.add(copy);
+                return user;
+              })
+          .when(userRepository)
+          .save(any(UserEntity.class));
+
+      assertThat(moneyService.executeDaily("userId"))
+          .isEqualTo(MoneyService.DEFAULT_MONEY + MoneyService.DAILY_MONEY);
+
+      assertThat(savedUsers).hasSize(1);
+      assertThat(savedUsers.getFirst().getLastDaily()).isNotNull();
+      assertThat(savedUsers.getFirst().getLastDaily()).isAfter(yesterdayLate);
+    }
+
+    @Test
     @DisplayName("should throw CannotExecuteDailyException when user cannot daily yet")
     void shouldThrowCannotExecuteDailyExceptionWhenUserCannotDailyYet() {
       final var userEntity = buildUserEntity("userId");
-      LocalDateTime now = LocalDateTime.now();
+      LocalDateTime now = LocalDateTime.now(MoneyService.TIME_ZONE);
       userEntity.setLastDaily(now);
       when(userRepository.findById("userId")).thenReturn(Optional.of(userEntity));
 
       assertThatThrownBy(() -> moneyService.executeDaily("userId"))
           .isInstanceOf(CannotExecuteDailyException.class)
           .extracting(e -> ((CannotExecuteDailyException) e).getNextAvailableDaily())
-          .isEqualTo(now.plusDays(1));
+          .isEqualTo(LocalDate.now(MoneyService.TIME_ZONE).plusDays(1).atStartOfDay());
     }
   }
 

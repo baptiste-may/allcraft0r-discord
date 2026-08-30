@@ -5,7 +5,9 @@ import fr.may_baptiste.allcraft0r_discord.system.entity.UserEntity;
 import fr.may_baptiste.allcraft0r_discord.system.exception.commands.CannotExecuteDailyException;
 import fr.may_baptiste.allcraft0r_discord.system.mapper.UserMapper;
 import fr.may_baptiste.allcraft0r_discord.system.repository.UserRepository;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ public class MoneyService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
 
+  public static final ZoneId TIME_ZONE = ZoneId.of("Europe/Paris");
   public static final long DEFAULT_MONEY = 250;
   public static final long DAILY_MONEY = 100;
 
@@ -45,14 +48,14 @@ public class MoneyService {
 
   public synchronized long executeDaily(String userId) throws CannotExecuteDailyException {
     final var user = getOrCreateUser(userId);
-    if (user.getLastDaily() == null
-        || user.getLastDaily().isBefore(LocalDateTime.now().minusDays(1))) {
+    final var todayStart = LocalDate.now(TIME_ZONE).atStartOfDay();
+    if (user.getLastDaily() == null || user.getLastDaily().isBefore(todayStart)) {
       user.setMoney(user.getMoney() + DAILY_MONEY);
-      user.setLastDaily(LocalDateTime.now());
+      user.setLastDaily(LocalDateTime.now(TIME_ZONE));
       userRepository.save(user);
       return user.getMoney();
     }
-    throw new CannotExecuteDailyException(user.getLastDaily().plusDays(1));
+    throw new CannotExecuteDailyException(todayStart.plusDays(1));
   }
 
   @Transactional(readOnly = true)

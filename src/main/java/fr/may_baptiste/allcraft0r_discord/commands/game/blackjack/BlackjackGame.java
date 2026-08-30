@@ -158,6 +158,9 @@ public final class BlackjackGame extends ListenerAdapter {
   }
 
   private void resetTimeout(JDA jda) {
+    if (scheduler.isShutdown()) {
+      return;
+    }
     if (timeoutTask != null) {
       timeoutTask.cancel(false);
     }
